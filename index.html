@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenWalk - Your Carbon Footprint Tracker</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="#home"><i class="fas fa-leaf"></i> GreenWalk</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="#home">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#learn">Learn</a></li>
+                    <li class="nav-item"><button id="dashboard-btn" class="btn btn-dashboard">Dashboard</button></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section" id="home">
+        <div class="container">
+            <h1>Understand Your Impact, Empower Your Action</h1>
+            <p>GreenWalk helps you track your carbon footprint and discover your power to create a sustainable future.</p>
+            <a href="#calculator" class="btn-calculate"><i class="fas fa-calculator me-2"></i>Calculate Your Footprint</a>
+        </div>
+    </section>
+
+    <!-- Info Section -->
+    <section class="info-section" id="learn">
+        <div class="container">
+            <h2 class="section-title">Why Track Your Footprint?</h2>
+            <div class="row g-4">
+                <div class="col-md-4"><div class="info-card"><i class="fas fa-globe-americas"></i><h3>What is a Carbon Footprint?</h3><p>It's the total greenhouse gas emissions caused by your activities, measured in CO₂ equivalent.</p></div></div>
+                <div class="col-md-4"><div class="info-card"><i class="fas fa-chart-line"></i><h3>Why It Matters</h3><p>Understanding your impact is the first step toward meaningful change. Small actions add up to a big difference.</p></div></div>
+                <div class="col-md-4"><div class="info-card"><i class="fas fa-seedling"></i><h3>Take Action</h3><p>Track emissions, get personalized tips, and contribute to a more sustainable world.</p></div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Calculator Section -->
+    <section class="calculator-section" id="calculator">
+        <div class="container">
+            <h2 class="section-title">Estimate Your Carbon Footprint</h2>
+            <div class="calculator-container">
+                <div class="stepper-header">
+                    <div class="stepper" id="stepper">
+                        <!-- Stepper items are dynamically generated here -->
+                    </div>
+                </div>
+                <div class="calculator-content">
+
+                    <!-- Step 1: Setup -->
+                    <div class="step-content active" data-step-id="setup">
+                        <h3 class="step-title">1. Setup Your Calculation</h3>
+                        <p class="step-description">First, let's configure the calculator for your needs.</p>
+                        
+                        <div class="form-group">
+                            <h5><i class="fas fa-clock me-2"></i>Calculation Period</h5>
+                            <p class="text-muted small mb-3">Calculate your footprint based on daily, weekly, or monthly habits.</p>
+                            <div class="period-options">
+                                <div class="period-card" data-period="daily"><i class="fas fa-sun"></i><div><strong>Daily</strong></div><small>Per day</small></div>
+                                <div class="period-card" data-period="weekly"><i class="fas fa-calendar-week"></i><div><strong>Weekly</strong></div><small>Per week</small></div>
+                                <div class="period-card selected" data-period="monthly"><i class="fas fa-calendar-alt"></i><div><strong>Monthly</strong></div><small>Per month</small></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <h5><i class="fas fa-globe me-2"></i>Basic Information</h5>
+                             <div class="row">
+                                <div class="col-md-6 mb-3"><label class="form-label">Your Country</label><select class="form-select" id="country"><option value="IN" selected>India</option><option value="US">United States</option><option value="GB">United Kingdom</option></select><small class="text-muted">This sets region-specific emission factors.</small></div>
+                                <div class="col-md-6 mb-3"><label class="form-label">Household Size</label><input type="number" class="form-control" id="householdSize" value="1" min="1"><small class="text-muted">Number of people in your home.</small></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                             <h5><i class="fas fa-list-check me-2"></i>Sections to Include</h5>
+                             <div class="category-grid" id="include-sections">
+                                 <div class="category-card selected" data-category="household"><input class="form-check-input" type="checkbox" data-section="household" checked><i class="fas fa-home category-icon"></i><div><strong>Household</strong><small class="d-block text-muted">Energy, Gas</small></div></div>
+                                 <div class="category-card selected" data-category="transport"><input class="form-check-input" type="checkbox" data-section="transport" checked><i class="fas fa-car category-icon"></i><div><strong>Transport</strong><small class="d-block text-muted">Vehicles</small></div></div>
+                                 <div class="category-card" data-category="flights"><input class="form-check-input" type="checkbox" data-section="flights"><i class="fas fa-plane category-icon"></i><div><strong>Flights</strong><small class="d-block text-muted">Air Travel</small></div></div>
+                                 <div class="category-card selected" data-category="lifestyle"><input class="form-check-input" type="checkbox" data-section="lifestyle" checked><i class="fas fa-shopping-basket category-icon"></i><div><strong>Lifestyle</strong><small class="d-block text-muted">Food, Goods</small></div></div>
+                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Calculations -->
+                    <div class="step-content" data-step-id="calculation">
+                         <h3 class="step-title">2. Your Activities</h3>
+                         <p class="step-description">Fill in the details for the categories you selected for the <strong class="period-text">monthly</strong> period.</p>
+                         
+                         <!-- Household Section -->
+                         <div class="form-group calculation-section" data-section="household">
+                            <h5><i class="fas fa-home me-2"></i>Household</h5>
+                            <div class="mb-3"><label class="form-label">Electricity consumed <span class="period-text-inline">(monthly)</span></label><input type="number" class="form-control" id="electricity" min="0" placeholder="0"><small class="text-muted">Enter in kWh (units) as shown on your utility bill.</small></div>
+                            <div class="mb-3"><label class="form-label">LPG / Gas usage <span class="period-text-inline">(monthly)</span></label><input type="number" class="form-control" id="gas" min="0" placeholder="0"><small class="text-muted">Enter in kg. A standard Indian cylinder is 14.2 kg.</small></div>
+                         </div>
+                         
+                         <!-- Transport Section -->
+                         <div class="form-group calculation-section" data-section="transport">
+                            <h5><i class="fas fa-car me-2"></i>Transport</h5>
+                            <div class="row">
+                               <div class="col-md-6 mb-3"><label class="form-label">Car distance <span class="period-text-inline">(monthly)</span></label><div class="input-group"><input type="number" class="form-control" id="carDistance" min="0" placeholder="0"><span class="input-group-text distance-unit">km</span></div></div>
+                               <div class="col-md-6 mb-3"><label class="form-label">Car Fuel Type</label><select class="form-select" id="carFuel"><option value="petrol" selected>Petrol</option><option value="diesel">Diesel</option><option value="electric">Electric</option></select></div>
+                            </div>
+                            <div class="row">
+                               <div class="col-md-6 mb-3"><label class="form-label">Bus distance <span class="period-text-inline">(monthly)</span></label><div class="input-group"><input type="number" class="form-control" id="busDistance" min="0" placeholder="0"><span class="input-group-text distance-unit">km</span></div></div>
+                               <div class="col-md-6 mb-3"><label class="form-label">Train/Metro distance <span class="period-text-inline">(monthly)</span></label><div class="input-group"><input type="number" class="form-control" id="trainDistance" min="0" placeholder="0"><span class="input-group-text distance-unit">km</span></div></div>
+                            </div>
+                         </div>
+                         
+                         <!-- Flights Section -->
+                         <div class="form-group calculation-section" data-section="flights">
+                             <h5><i class="fas fa-plane me-2"></i>Flights</h5>
+                             <div class="mb-3"><label class="form-label">Return (round-trip) flights taken <span class="period-text-inline">(monthly)</span></label><input type="number" class="form-control" id="flights" min="0" placeholder="0"><small class="text-muted">Enter the total number of round-trip flights.</small></div>
+                         </div>
+
+                         <!-- Lifestyle Section -->
+                         <div class="form-group calculation-section" data-section="lifestyle">
+                             <h5><i class="fas fa-shopping-basket me-2"></i>Lifestyle</h5>
+                             <div class="mb-3"><label class="form-label">Primary Diet</label><select class="form-select" id="dietType"><option value="heavy_meat">High Meat (Daily)</option><option value="medium_meat" selected>Medium Meat (3-5x week)</option><option value="low_meat">Low Meat (1-2x week)</option><option value="pescatarian">Pescatarian (Fish only)</option><option value="vegetarian">Vegetarian</option><option value="vegan">Vegan</option></select></div>
+                             <div class="mb-3"><label class="form-label">Shopping spend <span class="period-text-inline">(monthly)</span></label><div class="input-group"><span class="input-group-text currency-unit">₹</span><input type="number" class="form-control" id="shopping" min="0" placeholder="0"></div><small class="text-muted">Estimate spending on clothing, electronics, etc.</small></div>
+                         </div>
+                    </div>
+
+                    <!-- Step 3: Results -->
+                    <div class="step-content" data-step-id="results">
+                        <h3 class="step-title">3. Your Results</h3>
+                        <p class="step-description">Here's your carbon footprint breakdown based on the provided data.</p>
+                        
+                        <div class="results-card">
+                           <div>Total CO₂ Emissions</div>
+                           <div class="result-value"><span id="totalEmissions">0.00</span> kg</div>
+                           <div><span class="period-text">per month</span></div>
+                           <small>for <span id="resultHousehold">1</span> person(s)</small>
+                        </div>
+
+                        <div class="breakdown-section">
+                           <h5 class="mb-3"><i class="fas fa-layer-group me-2"></i>Breakdown by Category</h5>
+                           <div id="breakdownList">
+                               <!-- Results dynamically generated here -->
+                           </div>
+                        </div>
+
+                        <div class="tips-section">
+                           <h5 class="mb-3"><i class="fas fa-lightbulb me-2 text-warning"></i>Top Reduction Tip</h5>
+                           <div id="tipsList">
+                               <p class="text-muted">Your top tip for reduction will appear here!</p>
+                           </div>
+                        </div>
+                        
+                        <div class="text-center">
+                           <button class="btn-save" id="saveImpactBtn"><i class="fas fa-save me-2"></i>Save My Impact</button>
+                           <p class="mt-3 text-muted"><small>Sign up to track progress and get more insights.</small></p>
+                        </div>
+                    </div>
+
+                    <div class="nav-buttons">
+                        <button class="btn btn-nav btn-prev" id="prevBtn" disabled><i class="fas fa-arrow-left me-2"></i>Previous</button>
+                        <button class="btn btn-nav btn-next" id="nextBtn">Next<i class="fas fa-arrow-right ms-2"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="script.js"></script>
+</body>
+</html>
