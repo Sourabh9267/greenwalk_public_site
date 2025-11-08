@@ -1,5 +1,12 @@
-// Wait for the DOM to be fully loaded
+// Ensure this script is loaded after the DOM and after SweetAlert2
 document.addEventListener('DOMContentLoaded', () => {
+
+    // --- EMISSION FACTORS (from data.js, included here for standalone use) ---
+    const emissionFactors = {
+        'IN': { name: "India", currency: '₹', distanceUnit: 'km', electricity_grid_intensity: 0.71, gas_kg_co2: 2.75, car_petrol_km: 0.19, car_diesel_km: 0.17, car_electric_km_base: 0.16, pt_bus_km: 0.10, pt_train_local_km: 0.05, flight_factor: 90, diet_factors: { heavy_meat: 10.2, medium_meat: 7.0, low_meat: 5.5, pescatarian: 5.1, vegetarian: 4.0, vegan: 3.2 }, secondary_factor: 0.025 },
+        'US': { name: "United States", currency: '$', distanceUnit: 'miles', electricity_grid_intensity: 0.37, gas_kg_co2: 2.75, car_petrol_mi: 0.34, car_diesel_mi: 0.32, car_electric_mi_base: 0.29, pt_bus_mi: 0.18, pt_train_local_mi: 0.15, flight_factor: 90, diet_factors: { heavy_meat: 12.5, medium_meat: 8.5, low_meat: 6.9, pescatarian: 6.0, vegetarian: 4.8, vegan: 3.8 }, secondary_factor: 0.007 },
+        'GB': { name: "United Kingdom", currency: '£', distanceUnit: 'miles', electricity_grid_intensity: 0.19, gas_kg_co2: 2.75, car_petrol_mi: 0.27, car_diesel_mi: 0.25, car_electric_mi_base: 0.28, pt_bus_mi: 0.16, pt_train_local_mi: 0.06, flight_factor: 90, diet_factors: { heavy_meat: 11.0, medium_meat: 7.5, low_meat: 6.0, pescatarian: 5.3, vegetarian: 4.2, vegan: 3.4 }, secondary_factor: 0.009 }
+    };
     
     // --- STATE MANAGEMENT ---
     const state = {
@@ -10,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
         visibleSteps: ['setup', 'calculation', 'results']
     };
     
-    // --- UI ELEMENT CACHE ---
+    // --- DOM ELEMENT CACHE ---
     const ui = {
         stepper: document.getElementById('stepper'),
         stepContents: document.querySelectorAll('.step-content'),
@@ -20,229 +27,234 @@ document.addEventListener('DOMContentLoaded', () => {
         categoryCards: document.querySelectorAll('.category-card'),
         countrySelect: document.getElementById('country'),
         saveBtn: document.getElementById('saveImpactBtn'),
-        dashboardBtn: document.getElementById('dashboard-btn'),
-        calcFormsContainer: document.querySelector('.calculation-forms-container'),
-        roleSelector: document.getElementById('role-selector'),
-        roleDutiesDisplay: document.getElementById('role-duties-display')
+        dashboardBtn: document.getElementById('dashboard-btn')
     };
 
-    // --- TEMPLATES for dynamic form generation ---
-    const calculationTemplates = {
-        household: `
-            <div class="form-group calculation-section" data-section="household">
-                <h5><i class="fas fa-home me-2"></i>Household</h5>
-                <div class="mb-3">
-                    <label class="form-label descriptive-label" for="electricity">How much electricity did your household consume <span class="period-in-label">(monthly)</span>?</label>
-                    <input type="number" class="form-control" id="electricity" min="0" placeholder="0">
-                    <small class="text-muted">Enter in kWh (also called "units" on your bill).</small>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label descriptive-label" for="lpg">How much cooking gas (LPG) did you use <span class="period-in-label">(monthly)</span>?</label>
-                    <input type="number" class="form-control" id="lpg" min="0" placeholder="0">
-                    <small class="text-muted">Enter in Litres. A domestic 14.2kg cylinder is ~28 L; a commercial 19kg is ~37 L.</small>
-                </div>
-            </div>`,
-        transport: `
-            <div class="form-group calculation-section" data-section="transport">
-                <h5><i class="fas fa-car me-2"></i>Transport</h5>
-                <div class="row">
-                    <div class="col-md-7 mb-3">
-                        <label class="form-label descriptive-label" for="carDistance">How far did you travel by car <span class="period-in-label">(monthly)</span>?</label>
-                        <div class="input-group"><input type="number" class="form-control" id="carDistance" min="0" placeholder="0"><span class="input-group-text distance-unit">km</span></div>
-                    </div>
-                    <div class="col-md-5 mb-3"><label class="form-label">Fuel Type</label><select class="form-select" id="carFuel"><option value="petrol" selected>Petrol</option><option value="diesel">Diesel</option><option value="electric">Electric</option></select></div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3"><label class="form-label descriptive-label" for="busDistance">How far by bus <span class="period-in-label">(monthly)</span>?</label><div class="input-group"><input type="number" class="form-control" id="busDistance" min="0" placeholder="0"><span class="input-group-text distance-unit">km</span></div></div>
-                    <div class="col-md-6 mb-3"><label class="form-label descriptive-label" for="trainDistance">How far by train/metro <span class="period-in-label">(monthly)</span>?</label><div class="input-group"><input type="number" class="form-control" id="trainDistance" min="0" placeholder="0"><span class="input-group-text distance-unit">km</span></div></div>
-                </div>
-            </div>`,
-        flights: `
-            <div class="form-group calculation-section" data-section="flights">
-                <h5><i class="fas fa-plane me-2"></i>Flights</h5>
-                <div class="mb-3"><label class="form-label descriptive-label" for="flights">How many return (round-trip) flights did you take <span class="period-in-label">(monthly)</span>?</label><input type="number" class="form-control" id="flights" min="0" placeholder="0"><small class="text-muted">We'll assume an average short-haul flight for calculation.</small></div>
-            </div>`,
-        lifestyle: `
-            <div class="form-group calculation-section" data-section="lifestyle">
-                <h5><i class="fas fa-shopping-basket me-2"></i>Lifestyle</h5>
-                <div class="mb-3"><label class="form-label">What is your primary diet?</label><select class="form-select" id="dietType"><option value="heavy_meat">High Meat (Daily)</option><option value="medium_meat" selected>Medium Meat (3-5x week)</option><option value="low_meat">Low Meat (1-2x week)</option><option value="vegetarian">Vegetarian</option><option value="vegan">Vegan</option></select></div>
-                <div class="mb-3">
-                    <label class="form-label descriptive-label" for="spending">How much did you spend on non-essential goods and entertainment <span class="period-in-label">(monthly)</span>?</label>
-                    <div class="input-group"><span class="input-group-text currency-unit">₹</span><input type="number" class="form-control" id="spending" min="0" placeholder="0"></div>
-                    <small class="text-muted">e.g., clothing, electronics, recreation, etc.</small>
-                </div>
-            </div>`
-    };
+    // --- FUNCTIONS ---
 
-    // --- CORE FUNCTIONS ---
-    function getInputValue(id) { const el = document.getElementById(id); if (!el) return 0; if (el.tagName === 'SELECT') return el.value; return parseFloat(el.value) || 0; }
+    function getInputValue(id) {
+        return parseFloat(document.getElementById(id).value) || 0;
+    }
 
     function updateStepper() {
         const steps = [{ id: 'setup', label: 'Setup' }];
-        if (Object.values(state.sections).some(v => v)) steps.push({ id: 'calculation', label: 'Calculation' });
+        if (state.sections.household || state.sections.transport || state.sections.flights || state.sections.lifestyle) {
+            steps.push({ id: 'calculation', label: 'Calculation' });
+        }
         steps.push({ id: 'results', label: 'Results' });
         state.visibleSteps = steps.map(s => s.id);
         
         ui.stepper.innerHTML = steps.map((step, index) => {
-            const stepNum = index + 1, isActive = stepNum === state.currentStep, isCompleted = stepNum < state.currentStep, line = index < steps.length - 1 ? '<div class="step-line-container"></div>' : '';
-            return `<div class="step-item ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}" data-step-index="${stepNum}">
+            const stepNum = index + 1;
+            const isActive = stepNum === state.currentStep;
+            const isCompleted = stepNum < state.currentStep;
+            return `<div class="step-item ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}">
                         <div class="step-circle">${isCompleted ? '<i class="fas fa-check"></i>' : stepNum}</div>
                         <div class="step-label">${step.label}</div>
-                    </div>` + line;
-        }).join('').replace(/<div class="step-line-container"><\/div>$/, '');
+                    </div>`;
+        }).join('<div class="step-line-container"><div class="step-line"></div></div>'); // simplified line
     }
 
     function showStep(stepIndex) {
-        if (stepIndex < 1 || stepIndex > state.visibleSteps.length) return;
         state.currentStep = stepIndex;
-        
         const currentStepId = state.visibleSteps[stepIndex - 1];
+        
         ui.stepContents.forEach(content => content.classList.remove('active'));
         document.querySelector(`.step-content[data-step-id="${currentStepId}"]`).classList.add('active');
 
-        updateStepper();
-        
         ui.prevBtn.disabled = stepIndex === 1;
-        ui.nextBtn.style.display = (stepIndex === state.visibleSteps.length) ? 'none' : 'block';
+        ui.nextBtn.disabled = stepIndex === state.visibleSteps.length;
         ui.nextBtn.innerHTML = (stepIndex === state.visibleSteps.length - 1) ? 'Calculate <i class="fas fa-calculator ms-2"></i>' : 'Next <i class="fas fa-arrow-right ms-2"></i>';
     }
 
-    function updateDynamicContent() {
+    function updateLabelsAndUnits() {
         state.calculationPeriod = document.querySelector('.period-card.selected').dataset.period;
         state.country = ui.countrySelect.value;
         const factors = emissionFactors[state.country];
-        const periodText = `(${state.calculationPeriod.replace('ly', '')})`;
-
-        ui.calcFormsContainer.innerHTML = Object.keys(calculationTemplates).filter(key => state.sections[key]).map(key => calculationTemplates[key]).join('');
-
-        document.querySelectorAll('.period-text').forEach(el => el.textContent = state.calculationPeriod);
-        document.querySelectorAll('.period-text-bold').forEach(el => el.textContent = state.calculationPeriod.charAt(0).toUpperCase() + state.calculationPeriod.slice(1));
-        document.querySelectorAll('.period-in-label').forEach(el => el.textContent = periodText);
+        const periodText = state.calculationPeriod.replace('ly', ''); // monthly -> month
+        
+        document.querySelectorAll('.period-text').forEach(el => el.textContent = `per ${periodText}`);
+        document.querySelectorAll('.period-text-inline').forEach(el => el.textContent = `(${periodText})`);
         document.querySelectorAll('.distance-unit').forEach(el => el.textContent = factors.distanceUnit);
         document.querySelectorAll('.currency-unit').forEach(el => el.textContent = factors.currency);
+
+        document.querySelectorAll('.calculation-section').forEach(section => {
+             section.style.display = state.sections[section.dataset.section] ? 'block' : 'none';
+        });
     }
 
     function calculateFootprint() {
-        const period = state.calculationPeriod, factors = emissionFactors[state.country], hhSize = getInputValue('householdSize') || 1;
-        const periodDays = { daily: 1, weekly: 7, monthly: 30.42 }[period];
-        const calculationDetails = {};
-        const results = { household: 0, transport: 0, flights: 0, lifestyle: 0 };
-        const unit = factors.distanceUnit;
-
-        if (state.sections.household) {
-            const electricity = getInputValue('electricity'), lpg = getInputValue('lpg');
-            results.household = (electricity * factors.electricity_grid_intensity) + (lpg * factors.lpg_litre);
-            calculationDetails.household = { formula: `<b>Electricity:</b><br>${electricity.toFixed(2)} kWh &times; ${factors.electricity_grid_intensity} kg/kWh<br><b>LPG:</b><br>${lpg.toFixed(2)} L &times; ${factors.lpg_litre} kg/L`};
-        }
-        if (state.sections.transport) {
-            const carFuel = getInputValue('carFuel'), carDist = getInputValue('carDistance'), busDist = getInputValue('busDistance'), trainDist = getInputValue('trainDistance');
-            const carFactorKey = `car_${carFuel}_${unit}`, electricKey = `car_electric_kwh_${unit}`;
-            const carFactor = carFuel === 'electric' ? (factors[electricKey] * factors.electricity_grid_intensity) : factors[carFactorKey];
-            results.transport = (carDist * carFactor) + (busDist * factors[`pt_bus_${unit}`]) + (trainDist * factors[`pt_train_local_${unit}`]);
-            calculationDetails.transport = { formula: `<b>Car:</b><br>${carDist.toFixed(2)} ${unit} &times; ${carFactor.toFixed(2)} kg/${unit}<br><b>Bus:</b><br>${busDist.toFixed(2)} ${unit} &times; ${factors[`pt_bus_${unit}`]} kg/${unit}<br>...and other transport`};
-        }
-        if (state.sections.flights) {
-            const flightCount = getInputValue('flights');
-            results.flights = flightCount * 90 * 2.5; // Avg 2.5hr flight
-            calculationDetails.flights = { formula: `${flightCount} flights &times; ~225 kg/flight (avg.)` };
-        }
-        if (state.sections.lifestyle) {
-            const dietType = getInputValue('dietType');
-            const dailyDietFactor = (factors.secondary_factors['food_' + dietType]); // Assuming it's a daily kg factor
-            const spending = getInputValue('spending');
-            const spendingFactor = (factors.secondary_factors.clothing);
-            results.lifestyle = (dailyDietFactor * periodDays) + (spending * spendingFactor);
-            calculationDetails.lifestyle = { formula: `<b>Diet:</b><br>${periodDays.toFixed(1)} days &times; ${dailyDietFactor.toFixed(2)} kg/day<br><b>Spending:</b><br>${spending.toFixed(2)} ${factors.currency} &times; ${spendingFactor.toFixed(3)} (factor)` };
-        }
+        const period = state.calculationPeriod;
+        const factors = emissionFactors[state.country];
+        const householdSize = getInputValue('householdSize') || 1;
         
-        if(hhSize > 1) {
-             results.household /= hhSize;
-             calculationDetails.household.formula = `(${calculationDetails.household.formula}) / ${hhSize} people`;
+        const periodMultipliers = { daily: 1, weekly: 7, monthly: 30 };
+        const multiplier = periodMultipliers[period];
+        
+        const results = {
+            household: 0, transport: 0, flights: 0, lifestyle: 0, total: 0
+        };
+
+        // Household
+        if (state.sections.household) {
+            results.household += getInputValue('electricity') * factors.electricity_grid_intensity;
+            results.household += getInputValue('gas') * factors.gas_kg_co2;
         }
 
-        results.total = Object.values(results).reduce((sum, val) => sum + val, 0);
-        return { results, calculationDetails };
+        // Transport
+        if (state.sections.transport) {
+            const carFuel = document.getElementById('carFuel').value;
+            let carFactor;
+            if(carFuel === 'electric') {
+                carFactor = factors.car_electric_km_base * factors.electricity_grid_intensity;
+            } else {
+                 carFactor = factors[`car_${carFuel}_${factors.distanceUnit === 'km' ? 'km' : 'mi'}`]
+            }
+            results.transport += getInputValue('carDistance') * carFactor;
+            results.transport += getInputValue('busDistance') * factors[`pt_bus_${factors.distanceUnit === 'km' ? 'km' : 'mi'}`];
+            results.transport += getInputValue('trainDistance') * factors[`pt_train_local_${factors.distanceUnit === 'km' ? 'km' : 'mi'}`];
+        }
+
+        // Flights (Factor is per hour, assuming avg short haul flight is ~2 hours)
+        if (state.sections.flights) {
+            results.flights += getInputValue('flights') * factors.flight_factor * 2; 
+        }
+
+        // Lifestyle (factors are daily)
+        if (state.sections.lifestyle) {
+            const dietType = document.getElementById('dietType').value;
+            results.lifestyle += (factors.diet_factors[dietType] || 0) * multiplier;
+            results.lifestyle += getInputValue('shopping') * factors.secondary_factor;
+        }
+
+        results.household = (results.household / householdSize); // Per person for the period
+        
+        // Summing up
+        results.total = results.household + results.transport + results.flights + results.lifestyle;
+
+        return results;
     }
 
-    function displayResults({ results, calculationDetails }) {
+    function displayResults(results) {
         document.getElementById('totalEmissions').textContent = results.total.toFixed(2);
-        const annualTonnes = (results.total / {daily:1, weekly:7, monthly:30.42}[state.calculationPeriod] * 365) / 1000;
-        document.getElementById('annualEquivalent').textContent = `Equivalent to ~${annualTonnes.toFixed(2)} tonnes per year`;
+        document.querySelector('.period-text').textContent = `per ${state.calculationPeriod.replace('ly','')}`;
+        document.getElementById('resultHousehold').textContent = getInputValue('householdSize');
 
         const breakdownContainer = document.getElementById('breakdownList');
         breakdownContainer.innerHTML = '';
         
-        const sortedResults = Object.entries(results).filter(([k, v]) => k !== 'total' && v > 0.01).sort((a,b) => b[1] - a[1]);
-        if (!sortedResults.length) { breakdownContainer.innerHTML = `<p class="text-muted text-center p-3">No significant emissions were calculated.</p>`; return; }
+        const categoryData = {
+            household: {label: 'Household', icon: 'fa-home'},
+            transport: {label: 'Transport', icon: 'fa-car'},
+            flights: {label: 'Flights', icon: 'fa-plane'},
+            lifestyle: {label: 'Lifestyle', icon: 'fa-shopping-basket'},
+        };
         
-        const iconMap = { household: 'fa-home', transport: 'fa-car', flights: 'fa-plane', lifestyle: 'fa-shopping-basket' };
-
+        // Generate breakdown list
+        let sortedResults = Object.entries(results).filter(([key, value]) => key !== 'total' && value > 0).sort((a,b) => b[1] - a[1]);
+        
+        if(sortedResults.length === 0){
+             breakdownContainer.innerHTML = `<p class="text-muted text-center p-3">No emissions calculated. Enter some data first.</p>`;
+             document.getElementById('tipsList').innerHTML = `<p class="text-muted">No tips to show yet.</p>`;
+             return;
+        }
+        
         sortedResults.forEach(([key, value]) => {
-            const card = document.createElement('div'); card.className = 'breakdown-card';
-            const detail = calculationDetails[key];
-            const title = key.charAt(0).toUpperCase() + key.slice(1);
-            card.innerHTML = `<div class="breakdown-card-header">
-                                  <span><i class="fas ${iconMap[key]} me-2"></i>${title}</span>
-                                  <i class="fas fa-info-circle info-icon" data-bs-toggle="tooltip" data-bs-html="true" title="${detail ? detail.formula : 'No details'}"></i>
-                              </div>
-                              <div><div class="breakdown-card-value">${value.toFixed(2)} kg</div>
-                              <div class="breakdown-card-percent">${(results.total > 0 ? (value / results.total * 100) : 0).toFixed(0)}% of total</div></div>`;
-            breakdownContainer.appendChild(card);
+            const percentage = (value / results.total * 100).toFixed(0);
+            const item = document.createElement('div');
+            item.className = 'breakdown-item';
+            item.innerHTML = `<span><i class="fas ${categoryData[key].icon} me-2"></i>${categoryData[key].label}</span>
+                              <span><strong>${value.toFixed(2)} kg</strong> (${percentage}%)</span>`;
+            breakdownContainer.appendChild(item);
         });
+
+        // Generate top tip
+        const topCategory = sortedResults[0][0];
+        const tips = {
+            household: 'Switch to LEDs and unplug devices to reduce your energy consumption.',
+            transport: 'Try carpooling, using public transit, or cycling for shorter trips.',
+            flights: 'Consider trains for shorter travel and fly direct to reduce flight emissions.',
+            lifestyle: 'Adopting a more plant-rich diet is one of the biggest ways to reduce your footprint.'
+        };
         
-        new bootstrap.Tooltip(document.body, { selector: "[data-bs-toggle='tooltip']" });
+        const tipsContainer = document.getElementById('tipsList');
+        tipsContainer.innerHTML = `<div class="tip-item">
+                                        <i class="fas fa-leaf text-success fs-4"></i>
+                                        <div><strong>Focus on ${topCategory}:</strong> ${tips[topCategory]}</div>
+                                   </div>`;
+
     }
     
-    // --- Roles and Duties ---
-    function initRolesSection() {
-        if (typeof roleDuties === 'undefined' || !ui.roleSelector) return;
-        Object.keys(roleDuties).forEach(key => ui.roleSelector.add(new Option(roleDuties[key].title, key)));
-        ui.roleSelector.addEventListener('change', () => {
-            const category = roleDuties[ui.roleSelector.value];
-            if (!category) return;
-            let html = '<div class="accordion" id="rolesAccordion">';
-            Object.keys(category.roles).forEach((roleKey, index) => {
-                const role = category.roles[roleKey];
-                html += `
-                    <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c-${index}">${role.title}</button></h2>
-                    <div id="c-${index}" class="accordion-collapse collapse" data-bs-parent="#rolesAccordion"><div class="accordion-body">
-                    <ul>${role.duties.map(d => `<li><i class="fas fa-check-circle"></i>${d}</li>`).join('')}</ul></div></div></div>`;
-            });
-            ui.roleDutiesDisplay.innerHTML = html + '</div>';
+    // --- EVENT LISTENERS ---
+
+    ui.periodCards.forEach(card => card.addEventListener('click', () => {
+        ui.periodCards.forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        updateLabelsAndUnits();
+    }));
+
+    ui.categoryCards.forEach(card => card.addEventListener('click', () => {
+        const checkbox = card.querySelector('input[type="checkbox"]');
+        checkbox.checked = !checkbox.checked;
+        const category = card.dataset.category;
+        state.sections[category] = checkbox.checked;
+        card.classList.toggle('selected', checkbox.checked);
+        updateStepper();
+    }));
+
+    ui.countrySelect.addEventListener('change', updateLabelsAndUnits);
+
+    ui.prevBtn.addEventListener('click', () => showStep(state.currentStep - 1));
+    ui.nextBtn.addEventListener('click', () => {
+        if (state.currentStep === state.visibleSteps.length - 1) { // When "Calculate" is clicked
+            const results = calculateFootprint();
+            displayResults(results);
+        }
+        showStep(state.currentStep + 1);
+    });
+
+    ui.dashboardBtn.addEventListener('click', () => {
+         window.location.href = 'dashboard.html';
+    });
+    
+    ui.saveBtn.addEventListener('click', () => {
+        const results = calculateFootprint();
+        localStorage.setItem('greenwalk_pending_calculation', JSON.stringify({
+             ...results, 
+             period: state.calculationPeriod, 
+             timestamp: new Date().toISOString()
+        }));
+
+        Swal.fire({
+            title: 'Save Your Impact!',
+            html: `<p>Your carbon footprint is <strong>${results.total.toFixed(2)} kg CO₂e</strong> ${document.querySelector('.period-text').textContent}.</p>
+                   <p class="mt-3">Sign up or log in to track your progress and get AI-powered insights!</p>`,
+            icon: 'success',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-user-plus me-2"></i>Sign Up / Log In',
+            confirmButtonColor: '#4a7c4e',
+            cancelButtonText: 'Not Now'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // In a real app, this would redirect to a login/signup page.
+                // For Phase 1, we will simulate this with an alert.
+                Swal.fire({
+                   title: 'Coming Soon!',
+                   text: 'The user dashboard will be available in Phase 2. Your result is saved in this browser for now.',
+                   icon: 'info',
+                   confirmButtonColor: '#4a7c4e',
+                });
+            }
         });
+    });
+
+    // --- INITIALIZATION ---
+    function init() {
+        updateStepper();
+        showStep(1);
+        updateLabelsAndUnits();
     }
     
-    // --- EVENT BINDING & INIT ---
-    function setupEventListeners() {
-        ui.periodCards.forEach(card => card.addEventListener('click', () => { ui.periodCards.forEach(c => c.classList.remove('selected')); card.classList.add('selected'); updateDynamicContent(); }));
-        ui.categoryCards.forEach(card => card.addEventListener('click', () => { const cb = card.querySelector('input'); cb.checked = !cb.checked; state.sections[cb.dataset.section] = cb.checked; card.classList.toggle('selected', cb.checked); updateStepper(); showStep(state.currentStep); }));
-        ui.countrySelect.addEventListener('change', updateDynamicContent);
-        ui.prevBtn.addEventListener('click', () => showStep(state.currentStep - 1));
-        ui.nextBtn.addEventListener('click', () => { if (state.currentStep === state.visibleSteps.length - 1) displayResults(calculateFootprint()); showStep(state.currentStep + 1); });
-        
-        ui.dashboardBtn.addEventListener('click', () => window.location.href = 'dashboard.html');
-        ui.saveBtn.addEventListener('click', () => {
-            const { results } = calculateFootprint();
-            localStorage.setItem('greenwalk_pending_calculation', JSON.stringify({ ...results, period: state.calculationPeriod, ts: new Date().toISOString() }));
-            Swal.fire({
-                title: 'Save Your Impact',
-                html: `To save your result of <strong>${results.total.toFixed(2)} kg CO₂e</strong>, please create an account. This will allow you to:
-                       <ul class="swal-features list-unstyled text-start" >
-                           <li><i class="fas fa-check-circle me-2"></i>Track your progress over time</li>
-                           <li><i class="fas fa-check-circle me-2"></i>Receive personalized, AI-based suggestions</li>
-                           <li><i class="fas fa-check-circle me-2"></i>Compare your footprint with community averages</li>
-                       </ul>`,
-                icon: 'info', showCancelButton: true,
-                confirmButtonText: '<i class="fas fa-user-plus me-2"></i>Sign Up',
-                cancelButtonText: '<i class="fas fa-sign-in-alt me-2"></i>Log In',
-                confirmButtonColor: '#2a8a32ff', cancelButtonColor: '#3281dbff'
-            }).then(result => {
-                if (result.isConfirmed || result.dismiss === Swal.DismissReason.cancel) {
-                    Swal.fire('Coming Soon!', 'User accounts and dashboards are part of Phase 2. Your result is saved in this browser for now.', 'info');
-                }
-            });
-        });
-    }
-    
-    initRolesSection(); updateStepper(); showStep(1); updateDynamicContent(); setupEventListeners();
-});
+    init();
+
+}); 
