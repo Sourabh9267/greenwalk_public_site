@@ -46,6 +46,7 @@ section { padding: 5rem 0; }
 .nav__list { display: flex; align-items: center; list-style: none; margin: 0; padding: 0; gap: 2rem; }
 .nav__link { text-decoration: none; font-weight: 500; color: var(--text-dark); transition: color 0.2s; }
 .nav__link:hover { color: var(--primary-green); }
+.nav__toggle, .nav__close { display: none; }
 
 /* --- Sections --- */
 .hero-section {
@@ -123,6 +124,53 @@ fa-check-circle{
 color:green;
 fill:green;
 }
+
+@media screen and (max-width: 580px) {
+    .nav__menu {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 100%;
+        height: 100%;
+        background-color: white;
+        padding: 6rem 2rem 3rem;
+        box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+        transition: right 0.4s ease-in-out;
+        z-index: 1001;
+    }
+    .nav__list {
+        flex-direction: column;
+        gap: 2.5rem;
+        align-items: center;
+    }
+    .nav__link {
+        font-size: 1.25rem;
+    }
+    .nav__item #dashboard-btn {
+        width: 100%;
+    }
+    .nav__toggle {
+        display: block;
+        font-size: 1.5rem;
+        color: var(--dark-green);
+        cursor: pointer;
+    }
+    .nav__close {
+        display: block;
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        font-size: 1.8rem;
+        color: var(--dark-green);
+        cursor: pointer;
+    }
+
+    /* Class to show the menu */
+    .show-menu {
+        right: 0;
+    }
+}
+
 @media (min-width: 576px) { .breakdown-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 768px) {
     .info-grid, .grid-2, .category-grid, .period-options { grid-template-columns: 1fr; }

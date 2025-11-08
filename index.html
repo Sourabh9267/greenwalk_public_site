@@ -27,14 +27,22 @@
     <header class="header">
         <nav class="container nav">
             <a href="#home" class="nav__logo"><i class="fas fa-leaf"></i> GreenWalk</a>
-            <div class="nav__menu">
+            
+            <div class="nav__menu" id="nav-menu">
                 <ul class="nav__list">
                     <li class="nav__item"><a href="#learn" class="nav__link">Learn</a></li>
                     <li class="nav__item"><a href="#act" class="nav__link">Act</a></li>
                     <li class="nav__item"><a href="#calculator" class="nav__link">Calculator</a></li>
+                    <li class="nav__item"><button id="dashboard-btn" class="btn btn-primary">Dashboard</button></li>
                 </ul>
+                <div class="nav__close" id="nav-close">
+                    <i class="fas fa-times"></i>
+                </div>
             </div>
-            <button id="dashboard-btn" class="btn btn-primary">Dashboard</button>
+
+            <div class="nav__toggle" id="nav-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
         </nav>
     </header>
 

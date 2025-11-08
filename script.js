@@ -23,7 +23,12 @@ document.addEventListener('DOMContentLoaded', () => {
         dashboardBtn: document.getElementById('dashboard-btn'),
         calcFormsContainer: document.querySelector('.calculation-forms-container'),
         roleSelector: document.getElementById('role-selector'),
-        roleDutiesDisplay: document.getElementById('role-duties-display')
+        roleDutiesDisplay: document.getElementById('role-duties-display'),
+        // Added for Navbar
+        navMenu: document.getElementById('nav-menu'),
+        navToggle: document.getElementById('nav-toggle'),
+        navClose: document.getElementById('nav-close'),
+        navLinks: document.querySelectorAll('.nav__link')
     };
 
     // --- TEMPLATES for dynamic form generation ---
@@ -214,6 +219,25 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- EVENT BINDING & INIT ---
     function setupEventListeners() {
+        // --- Navbar Toggle Functionality ---
+        if (ui.navToggle) {
+            ui.navToggle.addEventListener('click', () => {
+                ui.navMenu.classList.add('show-menu');
+            });
+        }
+        if (ui.navClose) {
+            ui.navClose.addEventListener('click', () => {
+                ui.navMenu.classList.remove('show-menu');
+            });
+        }
+        // Close menu when a link is clicked
+        ui.navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                ui.navMenu.classList.remove('show-menu');
+            });
+        });
+
+        // --- Original Event Listeners ---
         ui.periodCards.forEach(card => card.addEventListener('click', () => { ui.periodCards.forEach(c => c.classList.remove('selected')); card.classList.add('selected'); updateDynamicContent(); }));
         ui.categoryCards.forEach(card => card.addEventListener('click', () => { const cb = card.querySelector('input'); cb.checked = !cb.checked; state.sections[cb.dataset.section] = cb.checked; card.classList.toggle('selected', cb.checked); updateStepper(); showStep(state.currentStep); }));
         ui.countrySelect.addEventListener('change', updateDynamicContent);
